@@ -81,7 +81,7 @@ const User = sequelize.define(
     matricula: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true, // Sequelize cria automaticamente a restrição UNIQUE
+      // Remova a definição unique aqui
     },
     senha: {
       type: DataTypes.STRING,
@@ -90,12 +90,10 @@ const User = sequelize.define(
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      // Remova o defaultValue aqui
     },
     updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      // Remova o defaultValue aqui
     },
   },
   {
