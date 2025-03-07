@@ -110,24 +110,31 @@ app.post("/login", async (req, res) => {
   try {
     const { matricula, senha } = req.body;
 
+    console.log("Dados recebidos do frontend:", { matricula, senha }); // Log dos dados recebidos
+
     // Busca o usuário no banco de dados
     const user = await User.findOne({
       where: { matricula },
     });
 
+    console.log("Usuário encontrado no banco de dados:", user); // Log do usuário encontrado
+
     if (!user) {
+      console.log("Usuário não encontrado"); // Log se o usuário não for encontrado
       return res.status(401).json({ message: "Matrícula ou senha inválidos" });
     }
 
     // Compara a senha fornecida com a senha armazenada (em texto plano)
     if (senha !== user.senha) {
+      console.log("Senha incorreta"); // Log se a senha estiver incorreta
       return res.status(401).json({ message: "Matrícula ou senha inválidos" });
     }
 
     // Retorna sucesso se o usuário for encontrado e a senha estiver correta
+    console.log("Login bem-sucedido"); // Log de sucesso
     res.json({ message: "Login bem-sucedido", user });
   } catch (error) {
-    console.error("Erro ao autenticar usuário:", error);
+    console.error("Erro ao autenticar usuário:", error); // Log de erro
     res.status(500).json({ message: "Erro ao autenticar usuário" });
   }
 });
