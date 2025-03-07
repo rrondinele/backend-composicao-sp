@@ -55,12 +55,10 @@ const Team = sequelize.define(
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      // Remova o defaultValue aqui
     },
     updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      // Remova o defaultValue aqui
     },
   },
   {
@@ -81,7 +79,6 @@ const User = sequelize.define(
     matricula: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
     },
     senha: {
       type: DataTypes.STRING,
