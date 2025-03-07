@@ -81,7 +81,7 @@ const User = sequelize.define(
     matricula: {
       type: DataTypes.STRING,
       allowNull: false,
-      // Remova a definição unique aqui
+      unique: true,
     },
     senha: {
       type: DataTypes.STRING,
@@ -115,14 +115,19 @@ app.post("/login", async (req, res) => {
 
     // Busca o usuário no banco de dados
     const user = await User.findOne({
-      where: { matricula, senha }, // Verifica matrícula e senha
+      where: { matricula },
     });
 
     if (!user) {
       return res.status(401).json({ message: "Matrícula ou senha inválidos" });
     }
 
-    // Retorna sucesso se o usuário for encontrado
+    // Compara a senha fornecida com a senha armazenada (em texto plano)
+    if (senha !== user.senha) {
+      return res.status(401).json({ message: "Matrícula ou senha inválidos" });
+    }
+
+    // Retorna sucesso se o usuário for encontrado e a senha estiver correta
     res.json({ message: "Login bem-sucedido", user });
   } catch (error) {
     console.error("Erro ao autenticar usuário:", error);
