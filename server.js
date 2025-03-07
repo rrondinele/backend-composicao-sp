@@ -44,16 +44,20 @@ const Team = sequelize.define("Teams", {
   eletricista_parceiro: { type: DataTypes.STRING, allowNull: false },
   servico: { type: DataTypes.STRING, allowNull: false },
   placa_veiculo: { type: DataTypes.STRING, allowNull: false },
-  finalizado: { type: DataTypes.BOOLEAN, defaultValue: false },
+  finalizado: { 
+    type: DataTypes.BOOLEAN, 
+    allowNull: false, 
+    defaultValue: false // Sequelize irá definir automaticamente
+  },
   createdAt: { 
     type: DataTypes.DATE, 
     allowNull: false, 
-    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") 
+    defaultValue: Sequelize.literal("GETDATE()") // Corrigido para SQL Server
   },
   updatedAt: { 
     type: DataTypes.DATE, 
     allowNull: false, 
-    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") 
+    defaultValue: Sequelize.literal("GETDATE()") // Corrigido para SQL Server
   }
 }, {
   timestamps: true,
