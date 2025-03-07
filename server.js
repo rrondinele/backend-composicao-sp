@@ -64,27 +64,37 @@ const Team = sequelize.define("Teams", {
   tableName: "Teams",
 });
 
-
-
 // Modelo do usuário
 const User = sequelize.define("Users", {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  matricula: { type: DataTypes.STRING, allowNull: false, unique: true },
-  senha: { type: DataTypes.STRING, allowNull: false },
+  id: { 
+    type: DataTypes.INTEGER, 
+    primaryKey: true, 
+    autoIncrement: true 
+  },
+  matricula: { 
+    type: DataTypes.STRING, 
+    allowNull: false, 
+    unique: true // Sequelize cria automaticamente a restrição UNIQUE
+  },
+  senha: { 
+    type: DataTypes.STRING, 
+    allowNull: false 
+  },
   createdAt: { 
     type: DataTypes.DATE, 
     allowNull: false, 
-    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") 
+    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") // Correção
   },
   updatedAt: { 
     type: DataTypes.DATE, 
     allowNull: false, 
-    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") 
+    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") // Correção
   }
 }, {
   timestamps: true,
   tableName: "Users",
 });
+
 
 // Sincronizar banco de dados e garantir que as tabelas estão corretas
 sequelize.sync({ alter: true })
