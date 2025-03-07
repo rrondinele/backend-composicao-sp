@@ -51,17 +51,16 @@ const Team = sequelize.define(
     finalizado: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      // Remova o defaultValue aqui
     },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      // Remova o defaultValue aqui
     },
     updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      // Remova o defaultValue aqui
     },
   },
   {
