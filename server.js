@@ -3,7 +3,7 @@ console.log("🔹 Configurações carregadas:", {
   DB_NAME: process.env.DB_NAME,
   DB_USER: process.env.DB_USER,
   DB_HOST: process.env.DB_HOST,
-  DB_PORT: process.env.DB_PORT
+  DB_PORT: process.env.DB_PORT,
 });
 
 const express = require("express");
@@ -25,81 +25,91 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
   logging: console.log, // Opcional para debug
 });
 
-sequelize.authenticate()
+// Testar conexão com o banco de dados
+sequelize
+  .authenticate()
   .then(() => console.log("🎉 Conectado ao banco de dados Azure SQL!"))
-  .catch(err => console.error("Erro ao conectar ao banco:", err));
+  .catch((err) => console.error("Erro ao conectar ao banco:", err));
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
 // Modelo da equipe
-const Team = sequelize.define("Teams", {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  data_atividade: { type: DataTypes.DATEONLY, allowNull: false },
-  supervisor: { type: DataTypes.STRING, allowNull: false },
-  status: { type: DataTypes.STRING, allowNull: false },
-  equipe: { type: DataTypes.STRING, allowNull: false },
-  eletricista_motorista: { type: DataTypes.STRING, allowNull: false },
-  eletricista_parceiro: { type: DataTypes.STRING, allowNull: false },
-  servico: { type: DataTypes.STRING, allowNull: false },
-  placa_veiculo: { type: DataTypes.STRING, allowNull: false },
-  finalizado: { 
-    type: DataTypes.BOOLEAN, 
-    allowNull: false, 
-    defaultValue: false 
+const Team = sequelize.define(
+  "Teams",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    data_atividade: { type: DataTypes.DATEONLY, allowNull: false },
+    supervisor: { type: DataTypes.STRING, allowNull: false },
+    status: { type: DataTypes.STRING, allowNull: false },
+    equipe: { type: DataTypes.STRING, allowNull: false },
+    eletricista_motorista: { type: DataTypes.STRING, allowNull: false },
+    eletricista_parceiro: { type: DataTypes.STRING, allowNull: false },
+    servico: { type: DataTypes.STRING, allowNull: false },
+    placa_veiculo: { type: DataTypes.STRING, allowNull: false },
+    finalizado: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false, // Valor padrão definido no modelo
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"), // Forma correta para SQL Server
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"), // Forma correta para SQL Server
+    },
   },
-  createdAt: { 
-    type: DataTypes.DATE, 
-    allowNull: false, 
-    defaultValue: Sequelize.fn("GETDATE") // Forma correta para SQL Server
-  },
-  updatedAt: { 
-    type: DataTypes.DATE, 
-    allowNull: false, 
-    defaultValue: Sequelize.fn("GETDATE") // Forma correta para SQL Server
+  {
+    timestamps: true,
+    tableName: "Teams",
   }
-}, {
-  timestamps: true,
-  tableName: "Teams",
-});
+);
 
 // Modelo do usuário
-const User = sequelize.define("Users", {
-  id: { 
-    type: DataTypes.INTEGER, 
-    primaryKey: true, 
-    autoIncrement: true 
+const User = sequelize.define(
+  "Users",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    matricula: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true, // Sequelize cria automaticamente a restrição UNIQUE
+    },
+    senha: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"), // Correção
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"), // Correção
+    },
   },
-  matricula: { 
-    type: DataTypes.STRING, 
-    allowNull: false, 
-    unique: true // Sequelize cria automaticamente a restrição UNIQUE
-  },
-  senha: { 
-    type: DataTypes.STRING, 
-    allowNull: false 
-  },
-  createdAt: { 
-    type: DataTypes.DATE, 
-    allowNull: false, 
-    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") // Correção
-  },
-  updatedAt: { 
-    type: DataTypes.DATE, 
-    allowNull: false, 
-    defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") // Correção
+  {
+    timestamps: true,
+    tableName: "Users",
   }
-}, {
-  timestamps: true,
-  tableName: "Users",
-});
-
+);
 
 // Sincronizar banco de dados e garantir que as tabelas estão corretas
-sequelize.sync({ alter: true })
+sequelize
+  .sync({ alter: true }) // Use `force: true` apenas em desenvolvimento para recriar tabelas
   .then(() => console.log("Banco de dados sincronizado"))
-  .catch(err => console.error("Erro ao sincronizar banco:", err));
+  .catch((err) => console.error("Erro ao sincronizar banco:", err));
 
 // Rota POST para autenticação de usuário
 app.post("/login", async (req, res) => {
@@ -202,7 +212,7 @@ app.put("/teams/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const updatedTeam = await Team.update(req.body, {
-      where: { id }
+      where: { id },
     });
 
     if (updatedTeam[0] === 0) {
@@ -221,7 +231,7 @@ app.delete("/teams/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await Team.destroy({
-      where: { id }
+      where: { id },
     });
 
     if (deleted === 0) {
