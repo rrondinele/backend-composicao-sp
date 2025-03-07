@@ -1,14 +1,33 @@
+require("dotenv").config();
+console.log("🔹 Configurações carregadas:", {
+  DB_NAME: process.env.DB_NAME,
+  DB_USER: process.env.DB_USER,
+  DB_HOST: process.env.DB_HOST,
+  DB_PORT: process.env.DB_PORT
+});
+
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Sequelize, DataTypes } = require("sequelize");
 
 // Configuração do banco de dados SQL Server
-const sequelize = new Sequelize("STC_SP", "sa", "broz1500", {
-  host: "CENSPRAC",
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
   dialect: "mssql",
-  logging: console.log, // Log para depuração
+  port: process.env.DB_PORT,
+  dialectOptions: {
+    options: {
+      encrypt: true, // Necessário para Azure
+      trustServerCertificate: false,
+    },
+  },
+  logging: console.log, // Opcional para debug
 });
+
+sequelize.authenticate()
+  .then(() => console.log("🎉 Conectado ao banco de dados Azure SQL!"))
+  .catch(err => console.error("Erro ao conectar ao banco:", err));
 
 const app = express();
 app.use(cors());
