@@ -47,22 +47,24 @@ const Team = sequelize.define("Teams", {
   finalizado: { 
     type: DataTypes.BOOLEAN, 
     allowNull: false, 
-    defaultValue: false // Sequelize irá definir automaticamente
+    defaultValue: false 
   },
   createdAt: { 
     type: DataTypes.DATE, 
     allowNull: false, 
-    defaultValue: Sequelize.literal("GETDATE()") // Corrigido para SQL Server
+    defaultValue: Sequelize.fn("GETDATE") // Forma correta para SQL Server
   },
   updatedAt: { 
     type: DataTypes.DATE, 
     allowNull: false, 
-    defaultValue: Sequelize.literal("GETDATE()") // Corrigido para SQL Server
+    defaultValue: Sequelize.fn("GETDATE") // Forma correta para SQL Server
   }
 }, {
   timestamps: true,
   tableName: "Teams",
 });
+
+
 
 // Modelo do usuário
 const User = sequelize.define("Users", {
