@@ -9,7 +9,7 @@ console.log("🔹 Configurações carregadas:", {
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const { Sequelize, DataTypes } = require("sequelize");
+const { Sequelize, DataTypes, Op } = require("sequelize");
 
 // Configuração do banco de dados SQL Server
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
@@ -119,6 +119,54 @@ sequelize
   .then(() => console.log("Banco de dados sincronizado"))
   .catch((err) => console.error("Erro ao sincronizar banco:", err));
 
+// Função para validar duplicidade
+const validateDuplicates = async (newTeam) => {
+  const { data_atividade, equipe, placa_veiculo, eletricista_motorista, eletricista_parceiro } = newTeam;
+
+  // Verifica duplicidade de equipe por data
+  const duplicateEquipe = await Team.findOne({
+    where: {
+      data_atividade,
+      equipe,
+    },
+  });
+
+  if (duplicateEquipe) {
+    return "Já existe uma equipe com o mesmo nome para esta data.";
+  }
+
+  // Verifica duplicidade de placa por data
+  const duplicatePlaca = await Team.findOne({
+    where: {
+      data_atividade,
+      placa_veiculo,
+    },
+  });
+
+  if (duplicatePlaca) {
+    return "Já existe uma placa com o mesmo número para esta data.";
+  }
+
+  // Verifica duplicidade de motorista ou parceiro por data (considerando ordem invertida)
+  const duplicateEletricistas = await Team.findOne({
+    where: {
+      data_atividade,
+      [Op.or]: [
+        { eletricista_motorista: eletricista_motorista },
+        { eletricista_motorista: eletricista_parceiro },
+        { eletricista_parceiro: eletricista_motorista },
+        { eletricista_parceiro: eletricista_parceiro },
+      ],
+    },
+  });
+
+  if (duplicateEletricistas) {
+    return "Já existe um motorista ou parceiro com o mesmo nome para esta data.";
+  }
+
+  return null; // Retorna null se não houver duplicidade
+};
+
 // Rota POST para autenticação de usuário
 app.post("/login", async (req, res) => {
   try {
@@ -204,6 +252,13 @@ app.post("/teams", async (req, res) => {
   try {
     console.log("📩 Dados recebidos do frontend:", req.body); // Debug
 
+    // Verifica duplicidade
+    const duplicateError = await validateDuplicates(req.body);
+    if (duplicateError) {
+      return res.status(400).json({ message: duplicateError });
+    }
+
+    // Cria a nova equipe se não houver duplicidade
     const novaEquipe = await Team.create(req.body);
 
     res.status(201).json(novaEquipe);
@@ -231,6 +286,14 @@ app.put("/teams/finalizar", async (req, res) => {
 app.put("/teams/:id", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Verifica duplicidade
+    const duplicateError = await validateDuplicates(req.body);
+    if (duplicateError) {
+      return res.status(400).json({ message: duplicateError });
+    }
+
+    // Atualiza a equipe se não houver duplicidade
     const updatedTeam = await Team.update(req.body, {
       where: { id },
     });
