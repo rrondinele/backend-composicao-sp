@@ -58,7 +58,9 @@ const Team = sequelize.define(
     status: { type: DataTypes.STRING, allowNull: false },
     equipe: { type: DataTypes.STRING, allowNull: false },
     eletricista_motorista: { type: DataTypes.STRING, allowNull: false },
+    br0_motorista: { type: DataTypes.STRING, allowNull: true },
     eletricista_parceiro: { type: DataTypes.STRING, allowNull: false },
+    br0_parceiro: { type: DataTypes.STRING, allowNull: true },
     servico: { type: DataTypes.STRING, allowNull: false },
     placa_veiculo: { type: DataTypes.STRING, allowNull: false },
     finalizado: {
@@ -122,6 +124,11 @@ sequelize
 // Função para validar duplicidade
 const validateDuplicates = async (newTeam) => {
   const { data_atividade, equipe, placa_veiculo, eletricista_motorista, eletricista_parceiro } = newTeam;
+
+  // ❌ Regra nova: eletricista_motorista não pode ser igual ao eletricista_parceiro
+  if (eletricista_motorista === eletricista_parceiro) {
+    return "O eletricista motorista não pode ser o mesmo que o eletricista parceiro.";
+  }
 
   // Verifica duplicidade de equipe por data
   const duplicateEquipe = await Team.findOne({
