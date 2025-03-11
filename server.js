@@ -100,6 +100,11 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    role: { 
+      type: DataTypes.STRING, 
+      allowNull: false, 
+      defaultValue: "user", // Define "user" como padrão
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -195,35 +200,46 @@ app.post("/login", async (req, res) => {
 
     // Retorna sucesso se o usuário for encontrado e a senha estiver correta
     console.log("Login bem-sucedido"); // Log de sucesso
-    res.json({ message: "Login bem-sucedido", user });
+    res.json({
+      message: "Login bem-sucedido",
+      user: {
+        matricula: user.matricula,
+        role: user.role,
+      },
+    });
   } catch (error) {
     console.error("Erro ao autenticar usuário:", error); // Log de erro
     res.status(500).json({ message: "Erro ao autenticar usuário" });
   }
 });
 
-// Rota GET para buscar todas as equipes não finalizadas, com filtro por data
+// Rota GET para buscar todas as equipes não finalizadas, com filtro por data e supervisor
 app.get("/teams", async (req, res) => {
   try {
-    const { data } = req.query;
-    console.log("Parâmetros recebidos:", { data }); // Debug
+    const { data, supervisor, role } = req.query;
+    console.log("Parâmetros recebidos:", { data, supervisor, role }); // Debug
 
     const whereClause = { finalizado: false }; // Sempre buscar apenas não finalizados
+
     if (data) {
       whereClause.data_atividade = data;
     }
 
-    const teams = await Team.findAll({
-      where: whereClause,
-    });
+    // Se o usuário for um supervisor, filtrar apenas as equipes dele
+    if (role === "supervisor" && supervisor) {
+      whereClause.supervisor = supervisor;
+    }
 
-    console.log("Equipes não finalizadas encontradas:", teams); // Debug
+    const teams = await Team.findAll({ where: whereClause });
+
+    console.log(`Equipes encontradas (${teams.length} resultados):`, teams); // Debug melhorado
     res.json(teams);
   } catch (error) {
     console.error("Erro ao buscar equipes não finalizadas:", error);
     res.status(500).json({ message: "Erro ao buscar equipes não finalizadas" });
   }
 });
+
 
 // Rota GET para buscar todas as equipes finalizadas, com filtro por data
 app.get("/teams/finalizadas", async (req, res) => {
