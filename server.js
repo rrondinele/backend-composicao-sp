@@ -122,7 +122,7 @@ sequelize
   .catch((err) => console.error("Erro ao sincronizar banco:", err));
 
 // Função para validar duplicidade
-const validateDuplicates = async (newTeam) => {
+const validateDuplicates = async (newTeam, editId = null) => {
   const { data_atividade, equipe, placa_veiculo, eletricista_motorista, eletricista_parceiro } = newTeam;
 
   // ❌ Regra nova: eletricista_motorista não pode ser igual ao eletricista_parceiro
@@ -132,10 +132,7 @@ const validateDuplicates = async (newTeam) => {
 
   // Verifica duplicidade de equipe por data
   const duplicateEquipe = await Team.findOne({
-    where: {
-      data_atividade,
-      equipe,
-    },
+    where: { data_atividade, equipe, id: { [Op.ne]: editId } },
   });
 
   if (duplicateEquipe) {
@@ -144,10 +141,7 @@ const validateDuplicates = async (newTeam) => {
 
   // Verifica duplicidade de placa por data
   const duplicatePlaca = await Team.findOne({
-    where: {
-      data_atividade,
-      placa_veiculo,
-    },
+    where: { data_atividade, placa_veiculo, id: { [Op.ne]: editId } },
   });
 
   if (duplicatePlaca) {
@@ -159,10 +153,10 @@ const validateDuplicates = async (newTeam) => {
     where: {
       data_atividade,
       [Op.or]: [
-        { eletricista_motorista: eletricista_motorista },
-        { eletricista_motorista: eletricista_parceiro },
-        { eletricista_parceiro: eletricista_motorista },
-        { eletricista_parceiro: eletricista_parceiro },
+        { eletricista_motorista: eletricista_motorista, id: { [Op.ne]: editId } },
+        { eletricista_motorista: eletricista_parceiro, id: { [Op.ne]: editId } },
+        { eletricista_parceiro: eletricista_motorista, id: { [Op.ne]: editId } },
+        { eletricista_parceiro: eletricista_parceiro, id: { [Op.ne]: editId } },
       ],
     },
   });
@@ -295,7 +289,7 @@ app.put("/teams/:id", async (req, res) => {
     const { id } = req.params;
 
     // Verifica duplicidade
-    const duplicateError = await validateDuplicates(req.body);
+    const duplicateError = await validateDuplicates(req.body, req.params.id);
     if (duplicateError) {
       return res.status(400).json({ message: duplicateError });
     }
