@@ -228,8 +228,8 @@ app.get("/teams", async (req, res) => {
 
     // Filtro por supervisor (aplicado apenas se o usuário for supervisor)
     if (role === "supervisor" && supervisor) {
-      // Usa diretamente a matrícula enviada pelo frontend
-      whereClause.supervisor = supervisor; // Filtra pela matrícula no banco de dados
+      // Usa diretamente o valor completo do supervisor enviado pelo frontend
+      whereClause.supervisor = supervisor; // Filtra pela coluna "supervisor" no banco de dados
     }
 
     // Busca as equipes no banco de dados
@@ -258,8 +258,8 @@ app.get("/teams/finalizadas", async (req, res) => {
 
     // Filtro por supervisor (aplicado apenas se o usuário for supervisor)
     if (role === "supervisor" && supervisor) {
-      // Usa diretamente a matrícula enviada pelo frontend
-      whereClause.supervisor = supervisor; // Filtra pela matrícula no banco de dados
+      // Usa diretamente o valor completo do supervisor enviado pelo frontend
+      whereClause.supervisor = supervisor; // Filtra pela coluna "supervisor" no banco de dados
     }
 
     // Busca as equipes no banco de dados
