@@ -244,8 +244,6 @@ app.get("/teams", async (req, res) => {
   }
 });
 
-
-
 // Rota GET para buscar todas as equipes finalizadas, com filtro por data e supervisor
 app.get("/teams/finalizadas", async (req, res) => {
   try {
