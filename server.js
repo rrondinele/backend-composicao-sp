@@ -228,9 +228,8 @@ app.get("/teams", async (req, res) => {
 
     // Filtro por supervisor (aplicado apenas se o usuário for supervisor)
     if (role === "supervisor" && supervisor) {
-      // Extrai a matrícula do valor "supervisor" (ex: "006061 - JULIO CESAR PEREIRA DA SILVA" -> "6061")
-      const matriculaSupervisor = supervisor.split(" - ")[0].replace(/^0+/, ""); // Remove zeros à esquerda
-      whereClause.matricula = matriculaSupervisor; // Filtra pela matrícula no banco de dados
+      // Usa diretamente a matrícula enviada pelo frontend
+      whereClause.supervisor_matricula = supervisor; // Filtra pela matrícula no banco de dados
     }
 
     // Busca as equipes no banco de dados
@@ -259,9 +258,8 @@ app.get("/teams/finalizadas", async (req, res) => {
 
     // Filtro por supervisor (aplicado apenas se o usuário for supervisor)
     if (role === "supervisor" && supervisor) {
-      // Extrai a matrícula do valor "supervisor" (ex: "006061 - JULIO CESAR PEREIRA DA SILVA" -> "6061")
-      const matriculaSupervisor = supervisor.split(" - ")[0].replace(/^0+/, ""); // Remove zeros à esquerda
-      whereClause.matricula = matriculaSupervisor; // Filtra pela matrícula no banco de dados
+      // Usa diretamente a matrícula enviada pelo frontend
+      whereClause.supervisor_matricula = supervisor; // Filtra pela matrícula no banco de dados
     }
 
     // Busca as equipes no banco de dados
