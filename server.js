@@ -221,15 +221,19 @@ app.get("/teams", async (req, res) => {
 
     const whereClause = { finalizado: false }; // Sempre buscar apenas não finalizados
 
+    // Filtro por data
     if (data) {
       whereClause.data_atividade = data;
     }
 
-    // Se o usuário for um supervisor, filtrar apenas as equipes dele
+    // Filtro por supervisor (aplicado apenas se o usuário for supervisor)
     if (role === "supervisor" && supervisor) {
-      whereClause.supervisor = supervisor;
+      // Extrai a matrícula do valor "supervisor" (ex: "006061 - JULIO CESAR PEREIRA DA SILVA" -> "6061")
+      const matriculaSupervisor = supervisor.split(" - ")[0].replace(/^0+/, ""); // Remove zeros à esquerda
+      whereClause.matricula = matriculaSupervisor; // Filtra pela matrícula no banco de dados
     }
 
+    // Busca as equipes no banco de dados
     const teams = await Team.findAll({ where: whereClause });
 
     console.log(`Equipes encontradas (${teams.length} resultados):`, teams); // Debug melhorado
@@ -241,22 +245,31 @@ app.get("/teams", async (req, res) => {
 });
 
 
-// Rota GET para buscar todas as equipes finalizadas, com filtro por data
+
+// Rota GET para buscar todas as equipes finalizadas, com filtro por data e supervisor
 app.get("/teams/finalizadas", async (req, res) => {
   try {
-    const { data } = req.query;
-    console.log("Parâmetros recebidos:", { data }); // Debug
+    const { data, supervisor, role } = req.query;
+    console.log("Parâmetros recebidos:", { data, supervisor, role }); // Debug
 
     const whereClause = { finalizado: true }; // Buscar apenas finalizados
+
+    // Filtro por data
     if (data) {
       whereClause.data_atividade = data;
     }
 
-    const teams = await Team.findAll({
-      where: whereClause,
-    });
+    // Filtro por supervisor (aplicado apenas se o usuário for supervisor)
+    if (role === "supervisor" && supervisor) {
+      // Extrai a matrícula do valor "supervisor" (ex: "006061 - JULIO CESAR PEREIRA DA SILVA" -> "6061")
+      const matriculaSupervisor = supervisor.split(" - ")[0].replace(/^0+/, ""); // Remove zeros à esquerda
+      whereClause.matricula = matriculaSupervisor; // Filtra pela matrícula no banco de dados
+    }
 
-    console.log("Equipes finalizadas encontradas:", teams); // Debug
+    // Busca as equipes no banco de dados
+    const teams = await Team.findAll({ where: whereClause });
+
+    console.log(`Equipes finalizadas encontradas (${teams.length} resultados):`, teams); // Debug melhorado
     res.json(teams);
   } catch (error) {
     console.error("Erro ao buscar equipes finalizadas:", error);
