@@ -126,48 +126,53 @@ sequelize
   .then(() => console.log("Banco de dados sincronizado"))
   .catch((err) => console.error("Erro ao sincronizar banco:", err));
 
+  
+
 // Função para validar duplicidade
 const validateDuplicates = async (newTeam, editId = null) => {
-  const { data_atividade, equipe, placa_veiculo, eletricista_motorista, eletricista_parceiro } = newTeam;
+  const { data_atividade, equipe, placa_veiculo, eletricista_motorista, eletricista_parceiro, status } = newTeam;
 
-  // ❌ Regra nova: eletricista_motorista não pode ser igual ao eletricista_parceiro
+  // ❌ Regra: eletricista_motorista não pode ser igual ao eletricista_parceiro (sempre válido)
   if (eletricista_motorista === eletricista_parceiro) {
     return "O eletricista motorista não pode ser o mesmo que o eletricista parceiro.";
   }
 
-  // Verifica duplicidade de equipe por data
-  const duplicateEquipe = await Team.findOne({
-    where: { data_atividade, equipe, id: { [Op.ne]: editId } },
-  });
+  // Aplica as demais validações apenas se o status for "CAMPO"
+  if (status === "CAMPO") {
+    // Verifica duplicidade de equipe por data
+    const duplicateEquipe = await Team.findOne({
+      where: { data_atividade, equipe, id: { [Op.ne]: editId } },
+    });
 
-  if (duplicateEquipe) {
-    return "Já existe uma equipe com o mesmo nome para esta data.";
-  }
+    if (duplicateEquipe) {
+      return "Já existe uma equipe com o mesmo nome para esta data.";
+    }
 
-  // Verifica duplicidade de placa por data
-  const duplicatePlaca = await Team.findOne({
-    where: { data_atividade, placa_veiculo, id: { [Op.ne]: editId } },
-  });
+    // Verifica duplicidade de placa por data
+    const duplicatePlaca = await Team.findOne({
+      where: { data_atividade, placa_veiculo, id: { [Op.ne]: editId } },
+    });
 
-  if (duplicatePlaca) {
-    return "Já existe uma placa com o mesmo número para esta data.";
-  }
+    if (duplicatePlaca) {
+      return "Já existe uma placa com o mesmo número para esta data.";
+    }
 
-  // Verifica duplicidade de motorista ou parceiro por data (considerando ordem invertida)
-  const duplicateEletricistas = await Team.findOne({
-    where: {
-      data_atividade,
-      [Op.or]: [
-        { eletricista_motorista: eletricista_motorista, id: { [Op.ne]: editId } },
-        { eletricista_motorista: eletricista_parceiro, id: { [Op.ne]: editId } },
-        { eletricista_parceiro: eletricista_motorista, id: { [Op.ne]: editId } },
-        { eletricista_parceiro: eletricista_parceiro, id: { [Op.ne]: editId } },
-      ],
-    },
-  });
+    // Verifica duplicidade de motorista ou parceiro por data
+    const duplicateEletricistas = await Team.findOne({
+      where: {
+        data_atividade,
+        [Op.or]: [
+          { eletricista_motorista: eletricista_motorista, id: { [Op.ne]: editId } },
+          { eletricista_motorista: eletricista_parceiro, id: { [Op.ne]: editId } },
+          { eletricista_parceiro: eletricista_motorista, id: { [Op.ne]: editId } },
+          { eletricista_parceiro: eletricista_parceiro, id: { [Op.ne]: editId } },
+        ],
+      },
+    });
 
-  if (duplicateEletricistas) {
-    return "Já existe um motorista ou parceiro com o mesmo nome para esta data.";
+    if (duplicateEletricistas) {
+      return "Já existe um motorista ou parceiro com o mesmo nome para esta data.";
+    }
   }
 
   return null; // Retorna null se não houver duplicidade
