@@ -36,7 +36,7 @@ const app = express();
 // Configuração do CORS para permitir solicitações do frontend no Vercel
 app.use(
   cors({
-    origin: "https://composicao-sp-stc.vercel.app", // Permite apenas o frontend no Vercel
+    origin: "https://composicao-enel-stc.vercel.app", // Permite apenas o frontend no Vercel
     credentials: true, // Permite cookies e cabeçalhos de autenticação
   })
 );
