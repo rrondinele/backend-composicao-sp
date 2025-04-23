@@ -139,7 +139,6 @@ sequelize
   .sync({ alter: true }) // Use `force: true` apenas em desenvolvimento para recriar tabelas
   .then(() => console.log("Banco de dados sincronizado"))
   .catch((err) => console.error("Erro ao sincronizar banco:", err));
-
   
 
 // Função para validar duplicidade
