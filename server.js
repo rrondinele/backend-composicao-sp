@@ -36,7 +36,7 @@ const app = express();
 // Configuração do CORS para permitir solicitações do frontend no Vercel
 app.use(
   cors({
-    origin: "https://composicao-enel-stc.vercel.app", // Permite apenas o frontend no Vercel
+    origin: "https://composicao-stc.vercel.app", // Permite apenas o frontend no Vercel
     credentials: true, // Permite cookies e cabeçalhos de autenticação
   })
 );
@@ -45,7 +45,7 @@ app.use(bodyParser.json());
 
 // Rota raiz para verificar se o servidor está funcionando
 app.get("/", (req, res) => {
-  res.send("Backend da Composição SP está funcionando! 🚀");
+  res.send("Backend da Composição STC está funcionando! 🚀");
 });
 
 // Middleware para normalizar dados antes das rotas POST/PUT
