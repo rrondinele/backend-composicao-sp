@@ -12,6 +12,7 @@ const bodyParser = require("body-parser");
 const { Sequelize, DataTypes, Op } = require("sequelize");
 
 // Configuração do banco de dados SQL Server
+{/*
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
   host: process.env.DB_HOST,
   dialect: "mssql",
@@ -23,6 +24,22 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
     },
   },
   logging: console.log, // Opcional para debug
+});
+ */}
+
+ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  dialect: "mssql",
+  port: process.env.DB_PORT,
+  timezone: '-03:00', // <<< Define o fuso horário de Brasília (UTC-3)
+  dialectOptions: {
+    options: {
+      encrypt: true, // Necessário para Azure
+      trustServerCertificate: false,
+      useUTC: false, // <<< Muito importante: desativa UTC para salvar no timezone definido
+    },
+  },
+  logging: console.log,
 });
 
 // Testar conexão com o banco de dados
