@@ -160,88 +160,93 @@ sequelize
   .then(() => console.log("Banco de dados sincronizado"))
   .catch((err) => console.error("Erro ao sincronizar banco:", err));
   
-
-// Função para validar duplicidade
+  
 const validateDuplicates = async (newTeam, editId = null) => {
-  const { 
-    data_atividade, 
-    equipe, 
-    placa_veiculo, 
-    eletricista_motorista, 
-    eletricista_parceiro, 
-    status 
+  const {
+    data_atividade,
+    equipe,
+    placa_veiculo,
+    eletricista_motorista,
+    eletricista_parceiro,
+    status,
   } = newTeam;
 
-  // 1. Validação básica que sempre aplica (exceto quando é N/A)
-  if (eletricista_motorista === eletricista_parceiro && 
-      eletricista_motorista !== "N/A" && 
-      eletricista_parceiro !== "N/A") {
+  // Impede que o mesmo eletricista seja motorista e parceiro ao mesmo tempo
+  if (
+    eletricista_motorista &&
+    eletricista_parceiro &&
+    eletricista_motorista !== "N/A" &&
+    eletricista_parceiro !== "N/A" &&
+    eletricista_motorista === eletricista_parceiro
+  ) {
     return "O eletricista motorista não pode ser o mesmo que o eletricista parceiro.";
   }
 
-  // 2. Nova validação específica para eletricista_parceiro
-  if (eletricista_parceiro && eletricista_parceiro !== "N/A") {
-    const duplicateParceiro = await Team.findOne({
-      where: { 
+  // Verifica se o eletricista_motorista já está como motorista ou parceiro em outra equipe no mesmo dia
+  if (eletricista_motorista && eletricista_motorista !== "N/A") {
+    const exists = await Team.findOne({
+      where: {
         data_atividade,
-        eletricista_parceiro,
-        id: { [Op.ne]: editId } // Ignora o próprio registro durante edição
-      }
+        id: { [Op.ne]: editId },
+        finalizado: false,
+        [Op.or]: [
+          { eletricista_motorista: eletricista_motorista },
+          { eletricista_parceiro: eletricista_motorista },
+        ],
+      },
     });
-
-    if (duplicateParceiro) {
-      return "Este eletricista parceiro já está cadastrado para esta data.";
+    if (exists) {
+      return "Este eletricista (motorista) já está cadastrado como motorista ou parceiro nesta data.";
     }
   }
 
-  // 3. Validações específicas para status "CAMPO"
-  if (status === "CAMPO") {
-    // Verifica equipe duplicada (ignorando valores N/A)
-    if (equipe && equipe !== "N/A") {
-      const duplicateEquipe = await Team.findOne({
-        where: { 
-          data_atividade, 
-          equipe, 
-          id: { [Op.ne]: editId },
-          status: "CAMPO"
-        },
-      });
-      if (duplicateEquipe) return "Já existe uma equipe com o mesmo nome para esta data.";
-    }
-
-    // Verifica placa duplicada (ignorando valores N/A)
-    if (placa_veiculo && placa_veiculo !== "N/A") {
-      const duplicatePlaca = await Team.findOne({
-        where: { 
-          data_atividade, 
-          placa_veiculo, 
-          id: { [Op.ne]: editId },
-          status: "CAMPO"
-        },
-      });
-      if (duplicatePlaca) return "Já existe uma placa com o mesmo número para esta data.";
-    }
-
-    // Verifica eletricistas duplicados (motorista)
-    if (eletricista_motorista && eletricista_motorista !== "N/A") {
-      const duplicateMotorista = await Team.findOne({
-        where: {
-          data_atividade,
-          [Op.or]: [
-            { eletricista_motorista },
-            { eletricista_parceiro: eletricista_motorista }
-          ],
-          id: { [Op.ne]: editId },
-          status: "CAMPO"
-        }
-      });
-      if (duplicateMotorista) {
-        return "Já existe um motorista com o mesmo nome para esta data.";
-      }
+  // Verifica se o eletricista_parceiro já está como motorista ou parceiro em outra equipe no mesmo dia
+  if (eletricista_parceiro && eletricista_parceiro !== "N/A") {
+    const exists = await Team.findOne({
+      where: {
+        data_atividade,
+        id: { [Op.ne]: editId },
+        finalizado: false,
+        [Op.or]: [
+          { eletricista_motorista: eletricista_parceiro },
+          { eletricista_parceiro: eletricista_parceiro },
+        ],
+      },
+    });
+    if (exists) {
+      return "Este eletricista (parceiro) já está cadastrado como motorista ou parceiro nesta data.";
     }
   }
 
-  return null; // Sem erros de validação
+  // Validação de equipe duplicada (quando for status CAMPO)
+  if (status === "CAMPO" && equipe && equipe !== "N/A") {
+    const duplicateEquipe = await Team.findOne({
+      where: {
+        data_atividade,
+        equipe,
+        id: { [Op.ne]: editId },
+        finalizado: false,
+        status: "CAMPO",
+      },
+    });
+    if (duplicateEquipe) return "Já existe uma equipe com o mesmo nome para esta data.";
+  }
+
+  // Validação de placa duplicada
+  if (status === "CAMPO" && placa_veiculo && placa_veiculo !== "N/A") {
+    const duplicatePlaca = await Team.findOne({
+      where: {
+        data_atividade,
+        placa_veiculo,
+        id: { [Op.ne]: editId },
+        finalizado: false,
+        status: "CAMPO",
+      },
+    });
+    if (duplicatePlaca) return "Já existe uma placa com o mesmo número para esta data.";
+  }
+
+  return null; // Tudo certo
 };
 
 
@@ -354,7 +359,7 @@ app.get("/absenteismo", async (req, res) => {
     const equipes = await Team.findAll({
       where: {
         data_atividade: data,
-        finalizado: false,
+        finalizado: true,
       },
     });
 
@@ -376,7 +381,7 @@ app.get("/composicao/export", async (req, res) => {
     if (!data) return res.status(400).json({ message: "Data é obrigatória" });
 
     const equipes = await Team.findAll({
-      where: { data_atividade: data, finalizado: false },
+      where: { data_atividade: data, finalizado: true },
     });
 
     const plain = equipes.map(e => ({
