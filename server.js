@@ -10,6 +10,9 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Sequelize, DataTypes, Op } = require("sequelize");
+const XLSX = require("xlsx");
+const fs = require("fs");
+const path = require("path");
 
 // Configuração do banco de dados SQL Server
 {/*
@@ -342,6 +345,67 @@ app.get("/teams/finalizadas", async (req, res) => {
     res.status(500).json({ message: "Erro ao buscar equipes finalizadas" });
   }
 });
+
+app.get("/absenteismo", async (req, res) => {
+  try {
+    const { data } = req.query;
+    if (!data) return res.status(400).json({ message: "Data é obrigatória" });
+
+    const equipes = await Team.findAll({
+      where: {
+        data_atividade: data,
+        finalizado: false,
+      },
+    });
+
+    const total = equipes.length;
+    const completas = equipes.filter(e => e.status === "CAMPO").length;
+    const ausentes = total - completas;
+    const percentual = total > 0 ? ((ausentes / total) * 100).toFixed(1) : 0;
+
+    res.json({ total, completas, ausentes, percentual });
+  } catch (error) {
+    console.error("Erro ao calcular absenteísmo:", error);
+    res.status(500).json({ message: "Erro ao calcular absenteísmo" });
+  }
+});
+
+app.get("/composicao/export", async (req, res) => {
+  try {
+    const { data } = req.query;
+    if (!data) return res.status(400).json({ message: "Data é obrigatória" });
+
+    const equipes = await Team.findAll({
+      where: { data_atividade: data, finalizado: false },
+    });
+
+    const plain = equipes.map(e => ({
+      Data: e.data_atividade,
+      Supervisor: e.supervisor,
+      Equipe: e.equipe,
+      Motorista: e.eletricista_motorista,
+      Parceiro: e.eletricista_parceiro,
+      Serviço: e.servico,
+      Placa: e.placa_veiculo,
+      Status: e.status
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(plain);
+    XLSX.utils.book_append_sheet(wb, ws, "Composição");
+
+    const filePath = path.join(__dirname, `composicao_${data}.xlsx`);
+    XLSX.writeFile(wb, filePath);
+
+    res.download(filePath, `composicao_${data}.xlsx`, () => {
+      fs.unlinkSync(filePath); // Remove após envio
+    });
+  } catch (error) {
+    console.error("Erro ao gerar Excel:", error);
+    res.status(500).json({ message: "Erro ao exportar composição" });
+  }
+});
+
 
 // Rota POST para cadastrar uma equipe
 app.post("/teams", async (req, res) => {
