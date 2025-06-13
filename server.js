@@ -159,7 +159,7 @@ sequelize
   .sync({ alter: true }) // Use `force: true` apenas em desenvolvimento para recriar tabelas
   .then(() => console.log("Banco de dados sincronizado"))
   .catch((err) => console.error("Erro ao sincronizar banco:", err));
-  
+
   
 const validateDuplicates = async (newTeam, editId = null) => {
   const {
@@ -365,8 +365,9 @@ app.get("/absenteismo", async (req, res) => {
 
     const total = equipes.length;
     const completas = equipes.filter(e => e.status === "CAMPO").length;
+    const pessoasEmCampo = completas * 2
     const ausentes = total - completas;
-    const percentual = total > 0 ? ((ausentes / total) * 100).toFixed(1) : 0;
+    const percentual = total > 0 ? ((ausentes / (ausentes+pessoasEmCampo)) * 100).toFixed(1) : 0;
 
     res.json({ total, completas, ausentes, percentual });
   } catch (error) {
@@ -410,7 +411,6 @@ app.get("/composicao/export", async (req, res) => {
     res.status(500).json({ message: "Erro ao exportar composição" });
   }
 });
-
 
 // Rota POST para cadastrar uma equipe
 app.post("/teams", async (req, res) => {
