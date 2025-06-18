@@ -14,23 +14,7 @@ const XLSX = require("xlsx");
 const fs = require("fs");
 const path = require("path");
 
-// Configuração do banco de dados SQL Server
-{/*
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-  host: process.env.DB_HOST,
-  dialect: "mssql",
-  port: process.env.DB_PORT,
-  dialectOptions: {
-    options: {
-      encrypt: true, // Necessário para Azure
-      trustServerCertificate: false,
-    },
-  },
-  logging: console.log, // Opcional para debug
-});
- */}
-
- const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
   host: process.env.DB_HOST,
   dialect: "mssql",
   port: process.env.DB_PORT,
@@ -44,6 +28,39 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
   },
   logging: console.log,
 });
+
+const supervisoresPorEstado = {
+  SP: [
+    "011101 - RONDINELE ARAUJO CARVALHO",
+    "016032 - WAGNER AUGUSTO DA SILVA MAURO",
+    "006061 - JULIO CESAR PEREIRA DA SILVA",
+    "015540 - EDER JORDELINO GONCALVES CAETANO"
+  ],
+  RJ: [
+    "017451 - WESLEY PEREIRA DE SOUZA GOMES",
+    "015843 - HUGO PACHECO DOS SANTOS",
+    "004438 - JOSE OSCAR DO NASCIMENTO DE AZEVEDO",
+    "015729 - TIAGO DE SOUZA MATTOS"
+  ],
+  RJB: [
+    "018089 - SILVIA HELENA MARIOTINI DE ALCANTARA",
+    "018273 - JALISON NAVEGA",
+    "018274 - MARLON SILVA PINTO",
+    "018275 - FELIPE NATAL DIAS",
+    "018276 - RODOLPHO GOMES MOCAIBER",
+    "018412 - ADISON DOS SANTOS",
+    "018466 - JOAO BATISTA FRANCISCO",
+    "018468 - DANIEL PEIXOTO AREAS",
+    "018761 - GELSON ERIS MOREIRA PASSOS",
+    "018575 - MARCO ANTONIO DE NOVAES OLIVEIRA",
+    "019231 - RAFAEL BATISTA PIASSA",
+    "019412 - ROBSON JOSE DE QUEIROZ GUIMARAES",
+    "019485 - RENATO SANTIAGO SILVA",
+    "019704 - JORGE MICHAEL DE CASTRO PIRES",
+    "020116 - WANDERSON FERREIRA DA CONCEICAO"
+  ]
+};
+
 
 // Testar conexão com o banco de dados
 sequelize
@@ -323,69 +340,81 @@ app.get("/teams", async (req, res) => {
 
 // Rota GET para buscar todas as equipes finalizadas, com filtro por data e supervisor
 app.get("/teams/finalizadas", async (req, res) => {
+  const { data, estado } = req.query;
+
+  const whereClause = {
+    finalizado: true
+  };
+
+  if (data) {
+    whereClause.data_atividade = data;
+  }
+
+  if (estado && supervisoresPorEstado[estado]) {
+    whereClause.supervisor = { [Op.in]: supervisoresPorEstado[estado] };
+  }
+
   try {
-    const { data, supervisor, role } = req.query;
-    console.log("Parâmetros recebidos:", { data, supervisor, role }); // Debug
-
-    const whereClause = { finalizado: true }; // Buscar apenas finalizados
-
-    // Filtro por data
-    if (data) {
-      whereClause.data_atividade = data;
-    }
-
-    // Filtro por supervisor (aplicado apenas se o usuário for supervisor)
-    if (role === "supervisor" && supervisor) {
-      // Usa diretamente o valor completo do supervisor enviado pelo frontend
-      whereClause.supervisor = supervisor; // Filtra pela coluna "supervisor" no banco de dados
-    }
-
-    // Busca as equipes no banco de dados
-    const teams = await Team.findAll({ where: whereClause });
-
-    console.log(`Equipes finalizadas encontradas (${teams.length} resultados):`, teams); // Debug melhorado
+    const teams = await Team.findAll({
+      where: whereClause,
+      order: [['data_atividade', 'ASC']]
+    });
     res.json(teams);
   } catch (error) {
-    console.error("Erro ao buscar equipes finalizadas:", error);
-    res.status(500).json({ message: "Erro ao buscar equipes finalizadas" });
+    console.error('Erro ao buscar equipes finalizadas:', error);
+    res.status(500).json({ message: 'Erro ao buscar equipes finalizadas' });
   }
 });
 
 app.get("/absenteismo", async (req, res) => {
+const { data, estado } = req.query;
+
+  const whereClause = {};
+
+  if (data) {
+    whereClause.data_atividade = data;
+  }
+
+  if (estado && supervisoresPorEstado[estado]) {
+    whereClause.supervisor = { [Op.in]: supervisoresPorEstado[estado] };
+  }
+
   try {
-    const { data } = req.query;
-    if (!data) return res.status(400).json({ message: "Data é obrigatória" });
+    const teams = await Team.findAll({ where: whereClause });
 
-    const equipes = await Team.findAll({
-      where: {
-        data_atividade: data,
-        finalizado: true,
-      },
-    });
-
-    const total = equipes.length;
-    const completas = equipes.filter(e => e.status === "CAMPO").length;
-    const pessoasEmCampo = completas * 2
+    const total = teams.length;
+    const completas = teams.filter((t) => t.status === 'CAMPO').length;
     const ausentes = total - completas;
-    const percentual = total > 0 ? ((ausentes / (ausentes+pessoasEmCampo)) * 100).toFixed(1) : 0;
+    const percentual = total > 0 ? ((ausentes / total) * 100).toFixed(1) : '0';
 
     res.json({ total, completas, ausentes, percentual });
   } catch (error) {
-    console.error("Erro ao calcular absenteísmo:", error);
-    res.status(500).json({ message: "Erro ao calcular absenteísmo" });
+    console.error('Erro ao calcular absenteísmo:', error);
+    res.status(500).json({ message: 'Erro ao calcular absenteísmo' });
   }
 });
 
 app.get("/composicao/export", async (req, res) => {
   try {
-    const { data } = req.query;
+    const { data, estado } = req.query;
+
     if (!data) return res.status(400).json({ message: "Data é obrigatória" });
 
+    const whereClause = {
+      data_atividade: data,
+      finalizado: true,
+    };
+
+    if (estado && supervisoresPorEstado[estado]) {
+      whereClause.supervisor = { [Op.in]: supervisoresPorEstado[estado] };
+    }
+
     const equipes = await Team.findAll({
-      where: { data_atividade: data, finalizado: true },
+      where: whereClause,
+      order: [['data_atividade', 'ASC']],
     });
 
-    const plain = equipes.map(e => ({
+    const plain = equipes.map((e) => ({
       Data: e.data_atividade,
       Supervisor: e.supervisor,
       Equipe: e.equipe,
@@ -393,24 +422,26 @@ app.get("/composicao/export", async (req, res) => {
       Parceiro: e.eletricista_parceiro,
       Serviço: e.servico,
       Placa: e.placa_veiculo,
-      Status: e.status
+      Status: e.status,
     }));
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(plain);
     XLSX.utils.book_append_sheet(wb, ws, "Composição");
 
-    const filePath = path.join(__dirname, `composicao_${data}.xlsx`);
+    const filePath = path.join(__dirname, `composicao_${data}_${estado || "todos"}.xlsx`);
     XLSX.writeFile(wb, filePath);
 
-    res.download(filePath, `composicao_${data}.xlsx`, () => {
-      fs.unlinkSync(filePath); // Remove após envio
+    res.download(filePath, `composicao_${data}_${estado || "todos"}.xlsx`, () => {
+      fs.unlinkSync(filePath); // Remove o arquivo após o download
     });
+
   } catch (error) {
     console.error("Erro ao gerar Excel:", error);
     res.status(500).json({ message: "Erro ao exportar composição" });
   }
 });
+
 
 // Rota POST para cadastrar uma equipe
 app.post("/teams", async (req, res) => {
