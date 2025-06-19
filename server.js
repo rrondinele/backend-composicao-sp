@@ -412,7 +412,7 @@ app.get("/eletricistas/apontados", async (req, res) => {
     const teams = await Team.findAll({
       where: {
         data_atividade: data,
-        finalizado: true,  // Só pegar os registros ainda em edição
+        finalizado: true,  
         supervisor: { [Op.in]: supervisoresPorEstado[estado] }
       },
       attributes: ["eletricista_motorista", "eletricista_parceiro"]
