@@ -340,24 +340,30 @@ app.get("/teams", async (req, res) => {
 
 // Rota GET para buscar todas as equipes finalizadas, com filtro por data e supervisor
 app.get("/teams/finalizadas", async (req, res) => {
-  const { data, estado } = req.query;
+  const { data, estado, supervisor } = req.query;
 
   const whereClause = {
-    finalizado: true
+    finalizado: true,
   };
 
   if (data) {
     whereClause.data_atividade = data;
   }
 
+  // Filtro por estado (lista de supervisores)
   if (estado && supervisoresPorEstado[estado]) {
     whereClause.supervisor = { [Op.in]: supervisoresPorEstado[estado] };
+  }
+
+  // Filtro por supervisor específico (sobrescreve o estado se for passado)
+  if (supervisor) {
+    whereClause.supervisor = supervisor;
   }
 
   try {
     const teams = await Team.findAll({
       where: whereClause,
-      order: [['data_atividade', 'ASC']]
+      order: [['data_atividade', 'ASC']],
     });
     res.json(teams);
   } catch (error) {
@@ -365,6 +371,7 @@ app.get("/teams/finalizadas", async (req, res) => {
     res.status(500).json({ message: 'Erro ao buscar equipes finalizadas' });
   }
 });
+
 
 app.get("/absenteismo", async (req, res) => {
 const { data, estado } = req.query;
