@@ -401,6 +401,36 @@ const { data, estado } = req.query;
   }
 });
 
+app.get("/eletricistas/apontados", async (req, res) => {
+  const { data, estado } = req.query;
+
+  if (!data || !estado || !supervisoresPorEstado[estado]) {
+    return res.status(400).json({ message: "Parâmetros 'data' e 'estado' obrigatórios e válidos." });
+  }
+
+  try {
+    const teams = await Team.findAll({
+      where: {
+        data_atividade: data,
+        finalizado: false,  // Só pegar os registros ainda em edição
+        supervisor: { [Op.in]: supervisoresPorEstado[estado] }
+      },
+      attributes: ["eletricista_motorista", "eletricista_parceiro"]
+    });
+
+    const apontados = new Set();
+    teams.forEach(team => {
+      if (team.eletricista_motorista && team.eletricista_motorista !== 'N/A') apontados.add(team.eletricista_motorista);
+      if (team.eletricista_parceiro && team.eletricista_parceiro !== 'N/A') apontados.add(team.eletricista_parceiro);
+    });
+
+    res.json(Array.from(apontados));
+  } catch (error) {
+    console.error("Erro ao buscar eletricistas apontados:", error);
+    res.status(500).json({ message: "Erro ao buscar eletricistas apontados" });
+  }
+});
+
 app.get("/composicao/export", async (req, res) => {
   try {
     const { data, estado } = req.query;
