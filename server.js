@@ -31,10 +31,10 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 
 const supervisoresPorEstado = {
   SP: [
-    "011101 - RONDINELE ARAUJO CARVALHO",
-    "016032 - WAGNER AUGUSTO DA SILVA MAURO",
+    "018505 - DIEGO RAFAEL DE MELO SILVA",
     "006061 - JULIO CESAR PEREIRA DA SILVA",
-    "015540 - EDER JORDELINO GONCALVES CAETANO"
+    "016032 - WAGNER AUGUSTO DA SILVA MAURO"
+
   ],
   RJ: [
     "017451 - WESLEY PEREIRA DE SOUZA GOMES",
