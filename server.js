@@ -188,54 +188,60 @@ const validateDuplicates = async (newTeam, editId = null) => {
     status,
   } = newTeam;
 
-  // Impede que o mesmo eletricista seja motorista e parceiro ao mesmo tempo
-  if (
-    eletricista_motorista &&
-    eletricista_parceiro &&
-    eletricista_motorista !== "N/A" &&
-    eletricista_parceiro !== "N/A" &&
-    eletricista_motorista === eletricista_parceiro
-  ) {
-    return "O eletricista motorista não pode ser o mesmo que o eletricista parceiro.";
-  }
+  // Não valida duplicidades se for um registro finalizado
+  if (newTeam.finalizado) return null;
 
-  // Verifica se o eletricista_motorista já está como motorista ou parceiro em outra equipe no mesmo dia
+  // 1. Validação de eletricista repetido (motorista e parceiro)
   if (eletricista_motorista && eletricista_motorista !== "N/A") {
-    const exists = await Team.findOne({
-      where: {
-        data_atividade,
-        id: { [Op.ne]: editId },
-        //finalizado: false,
-        [Op.or]: [
-          { eletricista_motorista: eletricista_motorista },
-          { eletricista_parceiro: eletricista_motorista },
-        ],
-      },
-    });
-    if (exists) {
-      return "Este eletricista (motorista) já está cadastrado como motorista ou parceiro nesta data.";
-    }
-  }
-
-  // Verifica se o eletricista_parceiro já está como motorista ou parceiro em outra equipe no mesmo dia
-  if (eletricista_parceiro && eletricista_parceiro !== "N/A") {
-    const exists = await Team.findOne({
+    const existsAsMotorista = await Team.findOne({
       where: {
         data_atividade,
         id: { [Op.ne]: editId },
         finalizado: false,
-        [Op.or]: [
-          { eletricista_motorista: eletricista_parceiro },
-          { eletricista_parceiro: eletricista_parceiro },
-        ],
+        eletricista_motorista,
       },
     });
-    if (exists) {
-      return "Este eletricista (parceiro) já está cadastrado como motorista ou parceiro nesta data.";
+
+    const existsAsParceiro = await Team.findOne({
+      where: {
+        data_atividade,
+        id: { [Op.ne]: editId },
+        finalizado: false,
+        eletricista_parceiro: eletricista_motorista,
+      },
+    });
+
+    if (existsAsMotorista || existsAsParceiro) {
+      return "Este eletricista já está cadastrado nesta data (como motorista ou parceiro).";
     }
   }
 
-  // Validação de equipe duplicada (quando for status CAMPO)
+  // 2. Validação para eletricista parceiro
+  if (eletricista_parceiro && eletricista_parceiro !== "N/A") {
+    const existsAsMotorista = await Team.findOne({
+      where: {
+        data_atividade,
+        id: { [Op.ne]: editId },
+        finalizado: false,
+        eletricista_motorista: eletricista_parceiro,
+      },
+    });
+
+    const existsAsParceiro = await Team.findOne({
+      where: {
+        data_atividade,
+        id: { [Op.ne]: editId },
+        finalizado: false,
+        eletricista_parceiro,
+      },
+    });
+
+    if (existsAsMotorista || existsAsParceiro) {
+      return "Este eletricista já está cadastrado nesta data (como motorista ou parceiro).";
+    }
+  }
+
+  // 3. Validação de equipe duplicada (apenas para status CAMPO)
   if (status === "CAMPO" && equipe && equipe !== "N/A") {
     const duplicateEquipe = await Team.findOne({
       where: {
@@ -243,13 +249,12 @@ const validateDuplicates = async (newTeam, editId = null) => {
         equipe,
         id: { [Op.ne]: editId },
         finalizado: false,
-        status: "CAMPO",
       },
     });
-    if (duplicateEquipe) return "Já existe uma equipe com o mesmo nome para esta data.";
+    if (duplicateEquipe) return "Já existe uma equipe com este nome para esta data.";
   }
 
-  // Validação de placa duplicada
+  // 4. Validação de placa duplicada (apenas para status CAMPO)
   if (status === "CAMPO" && placa_veiculo && placa_veiculo !== "N/A") {
     const duplicatePlaca = await Team.findOne({
       where: {
@@ -257,10 +262,9 @@ const validateDuplicates = async (newTeam, editId = null) => {
         placa_veiculo,
         id: { [Op.ne]: editId },
         finalizado: false,
-        status: "CAMPO",
       },
     });
-    if (duplicatePlaca) return "Já existe uma placa com o mesmo número para esta data.";
+    if (duplicatePlaca) return "Já existe um veículo com esta placa para esta data.";
   }
 
   return null; // Tudo certo
