@@ -205,7 +205,7 @@ const validateDuplicates = async (newTeam, editId = null) => {
       where: {
         data_atividade,
         id: { [Op.ne]: editId },
-        finalizado: false,
+        //finalizado: false,
         [Op.or]: [
           { eletricista_motorista: eletricista_motorista },
           { eletricista_parceiro: eletricista_motorista },
