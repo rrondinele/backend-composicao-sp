@@ -188,89 +188,73 @@ const validateDuplicates = async (newTeam, editId = null) => {
     status,
   } = newTeam;
 
-  // Não valida duplicidades se for um registro finalizado
-  if (newTeam.finalizado) return null;
+  // Se o status for diferente de CAMPO, não precisa validar equipe e placa
+  const whereBase = {
+    data_atividade,
+    finalizado: false,
+    id: { [Op.ne]: editId }, // Ignora o próprio registro em edição
+  };
 
-  // 1. Validação de eletricista repetido (motorista e parceiro)
+  // 🔎 1) Eletricista Motorista duplicado (como motorista OU como parceiro em outro registro)
   if (eletricista_motorista && eletricista_motorista !== "N/A") {
-    const existsAsMotorista = await Team.findOne({
+    const motoristaDuplicado = await Team.findOne({
       where: {
-        data_atividade,
-        id: { [Op.ne]: editId },
-        finalizado: false,
-        eletricista_motorista,
+        ...whereBase,
+        [Op.or]: [
+          { eletricista_motorista: eletricista_motorista },
+          { eletricista_parceiro: eletricista_motorista },
+        ],
       },
     });
-
-    const existsAsParceiro = await Team.findOne({
-      where: {
-        data_atividade,
-        id: { [Op.ne]: editId },
-        finalizado: false,
-        eletricista_parceiro: eletricista_motorista,
-      },
-    });
-
-    if (existsAsMotorista || existsAsParceiro) {
-      return "Este eletricista já está cadastrado nesta data (como motorista ou parceiro).";
+    if (motoristaDuplicado) {
+      return `O eletricista "${eletricista_motorista}" já está cadastrado nesta data (como motorista ou parceiro).`;
     }
   }
 
-  // 2. Validação para eletricista parceiro
+  // 🔎 2) Eletricista Parceiro duplicado (como parceiro OU como motorista em outro registro)
   if (eletricista_parceiro && eletricista_parceiro !== "N/A") {
-    const existsAsMotorista = await Team.findOne({
+    const parceiroDuplicado = await Team.findOne({
       where: {
-        data_atividade,
-        id: { [Op.ne]: editId },
-        finalizado: false,
-        eletricista_motorista: eletricista_parceiro,
+        ...whereBase,
+        [Op.or]: [
+          { eletricista_motorista: eletricista_parceiro },
+          { eletricista_parceiro: eletricista_parceiro },
+        ],
       },
     });
-
-    const existsAsParceiro = await Team.findOne({
-      where: {
-        data_atividade,
-        id: { [Op.ne]: editId },
-        finalizado: false,
-        eletricista_parceiro,
-      },
-    });
-
-    if (existsAsMotorista || existsAsParceiro) {
-      return "Este eletricista já está cadastrado nesta data (como motorista ou parceiro).";
+    if (parceiroDuplicado) {
+      return `O eletricista "${eletricista_parceiro}" já está cadastrado nesta data (como motorista ou parceiro).`;
     }
   }
 
-  // 3. Validação de equipe duplicada (apenas para status CAMPO)
+  // 🔎 3) Equipe duplicada (se status for CAMPO)
   if (status === "CAMPO" && equipe && equipe !== "N/A") {
-    const duplicateEquipe = await Team.findOne({
+    const equipeDuplicada = await Team.findOne({
       where: {
-        data_atividade,
+        ...whereBase,
         equipe,
-        id: { [Op.ne]: editId },
-        finalizado: false,
       },
     });
-    if (duplicateEquipe) return "Já existe uma equipe com este nome para esta data.";
+    if (equipeDuplicada) {
+      return `Já existe a equipe "${equipe}" cadastrada para esta data.`;
+    }
   }
 
-  // 4. Validação de placa duplicada (apenas para status CAMPO)
+  // 🔎 4) Placa duplicada (se status for CAMPO)
   if (status === "CAMPO" && placa_veiculo && placa_veiculo !== "N/A") {
-    const duplicatePlaca = await Team.findOne({
+    const placaDuplicada = await Team.findOne({
       where: {
-        data_atividade,
+        ...whereBase,
         placa_veiculo,
-        id: { [Op.ne]: editId },
-        finalizado: false,
       },
     });
-    if (duplicatePlaca) return "Já existe um veículo com esta placa para esta data.";
+    if (placaDuplicada) {
+      return `Já existe o veículo "${placa_veiculo}" cadastrado para esta data.`;
+    }
   }
 
-  return null; // Tudo certo
+  return null; // ✅ Nenhuma duplicidade encontrada
 };
-
-
 
 // Rota POST para autenticação de usuário
 app.post("/login", async (req, res) => {
