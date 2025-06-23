@@ -188,21 +188,20 @@ const validateDuplicates = async (newTeam, editId = null) => {
     status,
   } = newTeam;
 
-  // Se o status for diferente de CAMPO, não precisa validar equipe e placa
+  // Base para todas as consultas
   const whereBase = {
     data_atividade,
-    finalizado: false,
     id: { [Op.ne]: editId }, // Ignora o próprio registro em edição
   };
 
-  // 🔎 1) Eletricista Motorista duplicado (como motorista OU como parceiro em outro registro)
+  // 🔎 1) Validação de eletricista motorista
   if (eletricista_motorista && eletricista_motorista !== "N/A") {
     const motoristaDuplicado = await Team.findOne({
       where: {
         ...whereBase,
         [Op.or]: [
-          { eletricista_motorista: eletricista_motorista },
-          { eletricista_parceiro: eletricista_motorista },
+          { eletricista_motorista },
+          { eletricista_parceiro: eletricista_motorista }
         ],
       },
     });
@@ -211,14 +210,14 @@ const validateDuplicates = async (newTeam, editId = null) => {
     }
   }
 
-  // 🔎 2) Eletricista Parceiro duplicado (como parceiro OU como motorista em outro registro)
+  // 🔎 2) Validação de eletricista parceiro
   if (eletricista_parceiro && eletricista_parceiro !== "N/A") {
     const parceiroDuplicado = await Team.findOne({
       where: {
         ...whereBase,
         [Op.or]: [
           { eletricista_motorista: eletricista_parceiro },
-          { eletricista_parceiro: eletricista_parceiro },
+          { eletricista_parceiro }
         ],
       },
     });
@@ -227,29 +226,31 @@ const validateDuplicates = async (newTeam, editId = null) => {
     }
   }
 
-  // 🔎 3) Equipe duplicada (se status for CAMPO)
+  // 🔎 3) Validação de equipe (apenas para status CAMPO)
   if (status === "CAMPO" && equipe && equipe !== "N/A") {
     const equipeDuplicada = await Team.findOne({
       where: {
         ...whereBase,
+        status: "CAMPO",
         equipe,
       },
     });
     if (equipeDuplicada) {
-      return `Já existe a equipe "${equipe}" cadastrada para esta data.`;
+      return `A equipe "${equipe}" já está cadastrada para esta data.`;
     }
   }
 
-  // 🔎 4) Placa duplicada (se status for CAMPO)
+  // 🔎 4) Validação de placa (apenas para status CAMPO)
   if (status === "CAMPO" && placa_veiculo && placa_veiculo !== "N/A") {
     const placaDuplicada = await Team.findOne({
       where: {
         ...whereBase,
+        status: "CAMPO",
         placa_veiculo,
       },
     });
     if (placaDuplicada) {
-      return `Já existe o veículo "${placa_veiculo}" cadastrado para esta data.`;
+      return `A placa "${placa_veiculo}" já está cadastrada para esta data.`;
     }
   }
 
