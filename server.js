@@ -334,7 +334,12 @@ app.get("/teams/finalizadas", async (req, res) => {
   };
 
   if (data) {
-    whereClause.data_atividade = data;
+    if (data.includes(',')) {
+      const [startDate, endDate] = data.split(',');
+      whereClause.data_atividade = { [Op.between]: [startDate, endDate] };
+    } else {
+      whereClause.data_atividade = data;
+    }
   }
 
   // Filtro por estado (lista de supervisores)
