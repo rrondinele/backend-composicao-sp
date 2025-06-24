@@ -369,14 +369,18 @@ app.get("/absenteismo", async (req, res) => {
 
   const whereClause = {};
 
+  // Filtro por intervalo de datas
   if (startDate && endDate) {
     whereClause.data_atividade = {
       [Op.between]: [startDate, endDate],
     };
   }
 
+  // Filtro por estado (supervisores daquele estado)
   if (estado && supervisoresPorEstado[estado]) {
-    whereClause.supervisor = { [Op.in]: supervisoresPorEstado[estado] };
+    whereClause.supervisor = {
+      [Op.in]: supervisoresPorEstado[estado],
+    };
   }
 
   try {
@@ -385,10 +389,16 @@ app.get("/absenteismo", async (req, res) => {
     const total = teams.length;
     const completas = teams.filter((t) => t.status === 'CAMPO').length;
     const ausentes = total - completas;
-    const denominador = ausentes + completas * 2;
+
+    const denominador = (completas * 2) + ausentes;
     const percentual = denominador > 0 ? ((ausentes / denominador) * 100).toFixed(2) : '0';
 
-    res.json({ total, completas, ausentes, percentual });
+    res.json({
+      total,
+      completas,
+      ausentes,
+      percentual,
+    });
   } catch (error) {
     console.error('Erro ao calcular absenteísmo:', error);
     res.status(500).json({ message: 'Erro ao calcular absenteísmo' });
