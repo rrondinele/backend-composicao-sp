@@ -383,7 +383,7 @@ const { data, estado } = req.query;
 
     // Nova fórmula: percentual = ausentes / (ausentes + completas * 2) * 100
     const denominador = ausentes + completas * 2;
-    const percentual = denominador > 0 ? ((ausentes / denominador) * 100).toFixed(1) : '0';
+    const percentual = denominador > 0 ? ((ausentes / denominador) * 100).toFixed(2) : '0';
 
     res.json({ total, completas, ausentes, percentual });
   } catch (error) {
