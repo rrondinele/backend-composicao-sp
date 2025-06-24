@@ -440,24 +440,25 @@ app.get("/composicao/export", async (req, res) => {
     const { data, estado } = req.query;
 
     if (!data) return res.status(400).json({ message: "Data é obrigatória" });
-    /*
-    const whereClause = {
-      data_atividade: data,
-      finalizado: true,
-    };
-    */
 
     const whereClause = { finalizado: true };
+    let fileStart = "", fileEnd = "", fileEstado = "";
 
     if (data.includes(",")) {
       const [start, end] = data.split(",");
       whereClause.data_atividade = { [Op.between]: [start, end] };
+      fileStart = formatDate(start);
+      fileEnd = formatDate(end);
     } else {
       whereClause.data_atividade = data;
+      fileStart = fileEnd = formatDate(data);
     }
 
     if (estado && supervisoresPorEstado[estado]) {
       whereClause.supervisor = { [Op.in]: supervisoresPorEstado[estado] };
+      fileEstado = `_${estado.toUpperCase()}`;
+    } else {
+      fileEstado = `_todos`;
     }
 
     const equipes = await Team.findAll({
@@ -480,12 +481,12 @@ app.get("/composicao/export", async (req, res) => {
     const ws = XLSX.utils.json_to_sheet(plain);
     XLSX.utils.book_append_sheet(wb, ws, "Composição");
 
-    const filePath = path.join(__dirname, `composicao_${data}_${estado || "todos"}.xlsx`);
-    XLSX.writeFile(wb, filePath);
+    const fileName = `composicao_${fileStart}_a_${fileEnd}${fileEstado}.xlsx`;
+    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "buffer" });
 
-    res.download(filePath, `composicao_${data}_${estado || "todos"}.xlsx`, () => {
-      fs.unlinkSync(filePath); // Remove o arquivo após o download
-    });
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buffer);
 
   } catch (error) {
     console.error("Erro ao gerar Excel:", error);
@@ -493,6 +494,11 @@ app.get("/composicao/export", async (req, res) => {
   }
 });
 
+// Função auxiliar para formatar a data como dd-mm-yyyy
+function formatDate(dateStr) {
+  const [year, month, day] = dateStr.split("-");
+  return `${day}-${month}-${year}`;
+}
 
 // Rota POST para cadastrar uma equipe
 app.post("/teams", async (req, res) => {
