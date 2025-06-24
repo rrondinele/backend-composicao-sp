@@ -364,14 +364,15 @@ app.get("/teams/finalizadas", async (req, res) => {
   }
 });
 
-
 app.get("/absenteismo", async (req, res) => {
-const { data, estado } = req.query;
+  const { startDate, endDate, estado } = req.query;
 
   const whereClause = {};
 
-  if (data) {
-    whereClause.data_atividade = data;
+  if (startDate && endDate) {
+    whereClause.data_atividade = {
+      [Op.between]: [startDate, endDate],
+    };
   }
 
   if (estado && supervisoresPorEstado[estado]) {
@@ -384,9 +385,6 @@ const { data, estado } = req.query;
     const total = teams.length;
     const completas = teams.filter((t) => t.status === 'CAMPO').length;
     const ausentes = total - completas;
-    //const percentual = total > 0 ? ((ausentes / total) * 100).toFixed(1) : '0';
-
-    // Nova fórmula: percentual = ausentes / (ausentes + completas * 2) * 100
     const denominador = ausentes + completas * 2;
     const percentual = denominador > 0 ? ((ausentes / denominador) * 100).toFixed(2) : '0';
 
