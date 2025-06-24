@@ -440,11 +440,21 @@ app.get("/composicao/export", async (req, res) => {
     const { data, estado } = req.query;
 
     if (!data) return res.status(400).json({ message: "Data é obrigatória" });
-
+    /*
     const whereClause = {
       data_atividade: data,
       finalizado: true,
     };
+    */
+
+    const whereClause = { finalizado: true };
+
+    if (data.includes(",")) {
+      const [start, end] = data.split(",");
+      whereClause.data_atividade = { [Op.between]: [start, end] };
+    } else {
+      whereClause.data_atividade = data;
+    }
 
     if (estado && supervisoresPorEstado[estado]) {
       whereClause.supervisor = { [Op.in]: supervisoresPorEstado[estado] };
