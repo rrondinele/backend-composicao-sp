@@ -34,7 +34,6 @@ const supervisoresPorEstado = {
     "018505 - DIEGO RAFAEL DE MELO SILVA",
     "006061 - JULIO CESAR PEREIRA DA SILVA",
     "016032 - WAGNER AUGUSTO DA SILVA MAURO"
-
   ],
   RJ: [
     "017451 - WESLEY PEREIRA DE SOUZA GOMES",
@@ -62,7 +61,6 @@ const supervisoresPorEstado = {
     "019475 - JONATAS DE OLIVEIRA ALVIM ESTEVES"
   ]
 };
-
 
 // Testar conexão com o banco de dados
 sequelize
